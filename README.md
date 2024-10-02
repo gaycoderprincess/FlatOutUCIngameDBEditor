@@ -7,7 +7,7 @@ Plugin to modify the game database in FlatOut: Ultimate Carnage in real time
 ## Installation
 
 - Make sure you have the Steam GFWL version of the game, as this is the only version this plugin is compatible with. (exe size of 4242504 bytes)
-- Plop the files into your game folder.
+- Plop the files into your game folder, press F5 in game to open the editor menu.
 - Enjoy, nya~ :3
 
 ## Building
