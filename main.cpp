@@ -585,7 +585,7 @@ void DBEditorLoop() {
 
 		if (auto numProperties = pCurrentNode->GetNumProperties()) {
 			DrawMenuOption(std::format("Properties: {}", numProperties), true);
-			for (int i = numProperties - 1; i >= 0; i--) {
+			for (int i = 0; i < numProperties; i++) {
 				auto propName = pCurrentNode->GetPropertyNameByIndex(i);
 				if (!pCurrentNode->DoesPropertyExist(propName)) continue;
 				if (menuState->nSelectedOption == menuState->nTempOptionCounter) sEnterHint = "Select";
