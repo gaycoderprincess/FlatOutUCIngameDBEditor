@@ -23,10 +23,12 @@ tMenuState PropEditFallbackMenuState;
 
 bool bMenuUp = false;
 std::string sEnterHint;
+std::string sLRScrollHint;
 
 LiteDb* pCurrentNode = nullptr;
 const char* sCurrentProperty = nullptr;
 void* pCurrentPropertyEditing = nullptr;
+LiteDb* pCurrentPropertyEditingNodeTemp = nullptr;
 std::string sCurrentPropertyEditString;
 
 tMenuState* GetMenuState() {
@@ -369,8 +371,10 @@ void EnterPropertyEditor(LiteDb* node, const char* propName, int offset) {
 		case DBVALUE_VECTOR4:
 			sCurrentPropertyEditString = std::format("{}", *(float*)pCurrentPropertyEditing);
 			break;
-		case DBVALUE_RGBA:
 		case DBVALUE_NODE:
+			pCurrentPropertyEditingNodeTemp = &LiteDb::gNodes[*(uint16_t*)pCurrentPropertyEditing];
+			break;
+		case DBVALUE_RGBA:
 		default:
 			break;
 	}
@@ -433,29 +437,51 @@ void DBEditorLoop() {
 
 	menuState->nTempOptionCounter = 0;
 	sEnterHint = "";
+	sLRScrollHint = "";
 
 	if (pCurrentPropertyEditing) {
+		char path[256];
+		pCurrentNode->GetFullPath(path);
 		auto type = pCurrentNode->GetPropertyType(sCurrentProperty);
 		auto base = (uintptr_t)pCurrentNode->GetPropertyPointer(sCurrentProperty);
 		auto current = (uintptr_t)pCurrentPropertyEditing;
 		if (type == DBVALUE_STRING) {
-			DrawMenuOption(std::format("Current Property: {}", sCurrentProperty), true);
+			DrawMenuOption(std::format("Current Property: {}.{}", path, sCurrentProperty), true);
 		}
 		else {
 			int offset = (current - base) / GetPropertyTypeSize(type, true);
-			DrawMenuOption(std::format("Current Property: {}[{}]", sCurrentProperty, offset + 1), true);
+			DrawMenuOption(std::format("Current Property: {}.{}[{}]", path, sCurrentProperty, offset + 1), true);
 		}
 
 		if (menuState->nSelectedOption == menuState->nTempOptionCounter) {
-			int maxLen = type == DBVALUE_STRING ? pCurrentNode->GetPropertyArraySize(sCurrentProperty) : 1024;
-			char tmp[1024];
-			strcpy_s(tmp, maxLen, sCurrentPropertyEditString.c_str());
-			AddTextInputToString(tmp, maxLen, type != DBVALUE_STRING);
-			sCurrentPropertyEditString = tmp;
+			if (type == DBVALUE_NODE) {
+				auto bak = pCurrentPropertyEditingNodeTemp;
+				if (bak < LiteDb::gNodes || *(uintptr_t*)bak != 0x6F3DCC) {
+					bak = pCurrentPropertyEditingNodeTemp = &LiteDb::gNodes[0];
+				}
+				if (IsKeyJustPressed(VK_LEFT)) pCurrentPropertyEditingNodeTemp--;
+				if (IsKeyJustPressed(VK_RIGHT)) pCurrentPropertyEditingNodeTemp++;
+
+				// scrolled over an invalid node
+				if (pCurrentPropertyEditingNodeTemp < LiteDb::gNodes || *(uintptr_t*)pCurrentPropertyEditingNodeTemp != 0x6F3DCC) pCurrentPropertyEditingNodeTemp = bak;
+				sLRScrollHint = "Scroll";
+
+				char tmp[256];
+				pCurrentPropertyEditingNodeTemp->GetFullPath(tmp);
+				sCurrentPropertyEditString = tmp;
+				if (sCurrentPropertyEditString.empty()) sCurrentPropertyEditString = "root";
+			}
+			else {
+				int maxLen = type == DBVALUE_STRING ? pCurrentNode->GetPropertyArraySize(sCurrentProperty) : 1024;
+				char tmp[1024];
+				strcpy_s(tmp, maxLen, sCurrentPropertyEditString.c_str());
+				AddTextInputToString(tmp, maxLen, type != DBVALUE_STRING);
+				sCurrentPropertyEditString = tmp;
+			}
 			sEnterHint = "Apply Changes";
 		}
 
-		if (DrawMenuOption(sCurrentPropertyEditString + "...") && !sCurrentPropertyEditString.empty()) {
+		if (DrawMenuOption(type == DBVALUE_NODE ? ("< " + sCurrentPropertyEditString + " >") : (sCurrentPropertyEditString + "...")) && !sCurrentPropertyEditString.empty()) {
 			switch (type) {
 				case DBVALUE_STRING:
 					strcpy_s((char*)pCurrentPropertyEditing, pCurrentNode->GetPropertyArraySize(sCurrentProperty), sCurrentPropertyEditString.c_str());
@@ -472,6 +498,9 @@ void DBEditorLoop() {
 					break;
 				case DBVALUE_CHAR:
 					*(uint8_t*)pCurrentPropertyEditing = std::stoi(sCurrentPropertyEditString);
+					break;
+				case DBVALUE_NODE:
+					*(uint16_t*)pCurrentPropertyEditing = pCurrentPropertyEditingNodeTemp - LiteDb::gNodes;
 					break;
 				default:
 					break;
@@ -545,15 +574,20 @@ void DBEditorLoop() {
 		}
 		else if (type == DBVALUE_NODE) {
 			for (int i = 0; i < arraySize; i++) {
-				if (menuState->nSelectedOption == menuState->nTempOptionCounter) sEnterHint = "Visit";
+				//if (menuState->nSelectedOption == menuState->nTempOptionCounter) sEnterHint = "Visit";
 
-				auto node = pCurrentNode->GetPropertyAsNode(propName, i);
-				node->GetFullPath(path);
+				if (auto node = pCurrentNode->GetPropertyAsNode(propName, i)) {
+					node->GetFullPath(path);
+				}
+				else {
+					strcpy_s(path, 256, "*INVALID NODE*");
+				}
 				if (DrawMenuOption(std::format("{}: {}", i + 1, path))) {
-					pCurrentNode = node;
-					sCurrentProperty = nullptr;
-					ResetMenuScroll();
-					GetMenuState()->nSelectedOption = 2;
+					EnterPropertyEditor(pCurrentNode, propName, i);
+					//pCurrentNode = node;
+					//sCurrentProperty = nullptr;
+					//ResetMenuScroll();
+					//GetMenuState()->nSelectedOption = 2;
 					return;
 				}
 			}
@@ -612,6 +646,10 @@ void DBEditorLoop() {
 		data.XCenterAlign = true;
 		std::string str;
 		if (pCurrentNode->GetParent()) str += "[ESC] Back";
+		if (!sLRScrollHint.empty()) {
+			if (!str.empty()) str += " ";
+			str += "[LEFT/RIGHT] " + sLRScrollHint;
+		}
 		if (!sEnterHint.empty()) {
 			if (!str.empty()) str += " ";
 			str += "[ENTER] " + sEnterHint;
