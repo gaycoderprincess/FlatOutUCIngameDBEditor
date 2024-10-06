@@ -140,11 +140,11 @@ void DBPropertyEditLoop(LiteDb* node, const char* propName, void* pCurrentProper
 	auto base = (uintptr_t)node->GetPropertyPointer(propName);
 	auto current = (uintptr_t)pCurrentPropertyEditing;
 	if (type == DBVALUE_STRING) {
-		DrawMenuOption(std::format("Current Property: {}", propName), true);
+		DrawMenuOption(std::format("Current Property: {}", propName), "", true);
 	}
 	else {
 		int offset = (current - base) / GetPropertyTypeSize(type, true);
-		DrawMenuOption(std::format("Current Property: {}[{}]", propName, offset + 1), true);
+		DrawMenuOption(std::format("Current Property: {}[{}]", propName, offset + 1), "", true);
 	}
 
 	if (type == DBVALUE_NODE) {
@@ -171,9 +171,9 @@ void DBPropertyEditLoop(LiteDb* node, const char* propName, void* pCurrentProper
 		ChloeMenuLib::AddTextInputToString(tmp, maxLen, type != DBVALUE_STRING);
 		sCurrentPropertyEditString = tmp;
 	}
-	ChloeMenuLib::SetEnterHint("Apply Changes");
+	ChloeMenuLib::SetEnterHint("Apply");
 
-	if (DrawMenuOption(type == DBVALUE_NODE ? ("< " + sCurrentPropertyEditString + " >") : (sCurrentPropertyEditString + "..."), false, false) && !sCurrentPropertyEditString.empty()) {
+	if (DrawMenuOption(type == DBVALUE_NODE ? ("< " + sCurrentPropertyEditString + " >") : (sCurrentPropertyEditString + "..."), "", false, false) && !sCurrentPropertyEditString.empty()) {
 		switch (type) {
 			case DBVALUE_STRING:
 				strcpy_s((char*)pCurrentPropertyEditing, node->GetPropertyArraySize(propName), sCurrentPropertyEditString.c_str());
@@ -244,7 +244,7 @@ void DBEditorPropertyLoop(LiteDb* node, const char* propName) {
 	bInPropertyEditorThisFrame = false;
 
 	ChloeMenuLib::BeginMenu();
-	DrawMenuOption(std::format("Current Property: {}",  propName), true);
+	DrawMenuOption(std::format("Current Property: {}",  propName), "", true);
 	auto type = node->GetPropertyType(propName);
 	auto arraySize = node->GetPropertyArraySize(propName);
 	ChloeMenuLib::SetEnterHint("Edit");
@@ -311,7 +311,7 @@ void DBEditorPropertyLoop(LiteDb* node, const char* propName) {
 		}
 	}
 	else {
-		DrawMenuOption(std::format("Type {} is not currently supported", GetPropertyTypeString(type)), false, false);
+		DrawMenuOption(std::format("Type {} is not currently supported", GetPropertyTypeString(type)), "", false, false);
 		ChloeMenuLib::SetEnterHint("");
 	}
 	ChloeMenuLib::EndMenu();
@@ -325,10 +325,10 @@ void DBEditorTreeLoop(LiteDb* node) {
 	ChloeMenuLib::BeginMenu();
 	char path[256] = "";
 	node->GetFullPath(path);
-	DrawMenuOption(std::format("Current Node: {}", path[0] ? path : "root"), true);
+	DrawMenuOption(std::format("Current Node: {}", path[0] ? path : "root"), "", true);
 
 	if (auto numChildren = node->GetNumChildren()) {
-		DrawMenuOption(std::format("Child Nodes: {}", numChildren), true);
+		DrawMenuOption(std::format("Child Nodes: {}", numChildren), "", true);
 		for (int i = numChildren - 1; i >= 0; i--) {
 			auto child = node->GetChildByIndex(i);
 			if (DrawMenuOption(child->GetName())) {
@@ -338,7 +338,7 @@ void DBEditorTreeLoop(LiteDb* node) {
 	}
 
 	if (auto numProperties = node->GetNumProperties()) {
-		DrawMenuOption(std::format("Properties: {}", numProperties), true);
+		DrawMenuOption(std::format("Properties: {}", numProperties), "", true);
 		for (int i = 0; i < numProperties; i++) {
 			auto propName = node->GetPropertyNameByIndex(i);
 			if (!node->DoesPropertyExist(propName)) continue;
