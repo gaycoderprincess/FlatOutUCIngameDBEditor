@@ -7,6 +7,7 @@
 #include "nya_commonhooklib.h"
 
 #include "fouc.h"
+#include "fo2versioncheck.h"
 #include "chloemenulib.h"
 
 LiteDb* pCurrentPropertyEditingNodeTemp = nullptr;
@@ -210,25 +211,25 @@ void EnterPropertyEditor(LiteDb* node, const char* propName, int offset) {
 	if (!bPropertyEditReady) {
 		switch (type) {
 			case DBVALUE_CHAR:
-				sCurrentPropertyEditString = std::to_string((int) *(uint8_t *) pCurrentPropertyEditing);
+				sCurrentPropertyEditString = std::to_string((int)*(uint8_t*)pCurrentPropertyEditing);
 				break;
 			case DBVALUE_STRING:
-				sCurrentPropertyEditString = (char *) pCurrentPropertyEditing;
+				sCurrentPropertyEditString = (char*)pCurrentPropertyEditing;
 				break;
 			case DBVALUE_BOOL:
-				sCurrentPropertyEditString = std::to_string(*(int *) pCurrentPropertyEditing);
+				sCurrentPropertyEditString = std::to_string(*(int*)pCurrentPropertyEditing);
 				break;
 			case DBVALUE_INT:
-				sCurrentPropertyEditString = std::to_string(*(int *) pCurrentPropertyEditing);
+				sCurrentPropertyEditString = std::to_string(*(int*)pCurrentPropertyEditing);
 				break;
 			case DBVALUE_FLOAT:
 			case DBVALUE_VECTOR2:
 			case DBVALUE_VECTOR3:
 			case DBVALUE_VECTOR4:
-				sCurrentPropertyEditString = std::format("{}", *(float *) pCurrentPropertyEditing);
+				sCurrentPropertyEditString = std::format("{}", *(float*)pCurrentPropertyEditing);
 				break;
 			case DBVALUE_NODE:
-				pCurrentPropertyEditingNodeTemp = &LiteDb::gNodes[*(uint16_t *) pCurrentPropertyEditing];
+				pCurrentPropertyEditingNodeTemp = &LiteDb::gNodes[*(uint16_t*)pCurrentPropertyEditing];
 				break;
 			case DBVALUE_RGBA:
 			default:
@@ -358,12 +359,7 @@ void DBEditorLoop() {
 BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 	switch( fdwReason ) {
 		case DLL_PROCESS_ATTACH: {
-			if (NyaHookLib::GetEntryPoint() != 0x24CEF7) {
-				MessageBoxA(nullptr, aFOUCVersionFail, "nya?!~", MB_ICONERROR);
-				exit(0);
-				return TRUE;
-			}
-
+			DoFlatOutVersionCheck(FO2Version::FOUC_GFWL);
 			ChloeMenuLib::RegisterMenu("In-Game DB Editor - gaycoderprincess", DBEditorLoop);
 		} break;
 		default:
