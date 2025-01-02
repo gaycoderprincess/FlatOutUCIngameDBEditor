@@ -1,5 +1,3 @@
-uint32_t nodeVtable = 0x6F3DCC;
-
 LiteDb* pCurrentPropertyEditingNodeTemp = nullptr;
 std::string sCurrentPropertyEditString;
 bool bPropertyEditReady = false;
