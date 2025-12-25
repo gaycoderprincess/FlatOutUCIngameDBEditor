@@ -26,7 +26,7 @@ target_include_directories(FlatOutUCIngameDBEditor PUBLIC ../nya-common/3rdparty
 target_include_directories(FlatOutUCIngameDBEditor PUBLIC ../nya-common/3rdparty/imgui)
 target_include_directories(FlatOutUCIngameDBEditor PUBLIC ../nya-common/3rdparty/imgui/backends)
 target_include_directories(FlatOutUCIngameDBEditor PUBLIC ../nya-common-fouc)
-target_include_directories(FlatOutUCIngameDBEditor PUBLIC ../FlatOutUCMenuLib/include)
+target_include_directories(FlatOutUCIngameDBEditor PUBLIC ../CwoeeMenuLib/include)
 target_link_options(FlatOutUCIngameDBEditor PRIVATE "-Wl,--exclude-all-symbols")
 set_target_properties(FlatOutUCIngameDBEditor PROPERTIES PREFIX "")
 set_target_properties(FlatOutUCIngameDBEditor PROPERTIES SUFFIX "_gcp.asi")
